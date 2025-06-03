@@ -1,0 +1,73 @@
+"use client";
+
+import { useEffect, useRef } from "react";
+import io from "socket.io-client";
+
+export default function VideoSection() {
+  const localRef = useRef<HTMLVideoElement>(null);
+  const remoteRef = useRef<HTMLVideoElement>(null);
+  const pcRef = useRef<RTCPeerConnection | null>(null);
+  const socketRef = useRef<any>(null);
+
+  useEffect(() => {
+    socketRef.current = io("http://localhost:4000");
+
+    const pc = new RTCPeerConnection({
+      iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+    });
+    pcRef.current = pc;
+
+    navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then((stream) => {
+      if (localRef.current) localRef.current.srcObject = stream;
+      stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+    });
+
+    pc.ontrack = (e) => {
+      if (remoteRef.current && e.streams[0]) {
+        remoteRef.current.srcObject = e.streams[0];
+      }
+    };
+
+    pc.onicecandidate = (e) => {
+      if (e.candidate) {
+        socketRef.current.emit("ice-candidate", e.candidate);
+      }
+    };
+
+    socketRef.current.on("offer", async (offer: RTCSessionDescriptionInit) => {
+      if (!pcRef.current) return;
+      await pcRef.current.setRemoteDescription(new RTCSessionDescription(offer));
+      const answer = await pcRef.current.createAnswer();
+      await pcRef.current.setLocalDescription(answer);
+      socketRef.current.emit("answer", answer);
+    });
+
+    socketRef.current.on("answer", (answer: RTCSessionDescriptionInit) => {
+      pcRef.current?.setRemoteDescription(new RTCSessionDescription(answer));
+    });
+
+    socketRef.current.on("ice-candidate", (candidate: RTCIceCandidateInit) => {
+      pcRef.current?.addIceCandidate(new RTCIceCandidate(candidate));
+    });
+
+    return () => {
+      socketRef.current?.disconnect();
+      pcRef.current?.close();
+    };
+  }, []);
+
+  const call = async () => {
+    if (!pcRef.current) return;
+    const offer = await pcRef.current.createOffer();
+    await pcRef.current.setLocalDescription(offer);
+    socketRef.current?.emit("offer", offer);
+  };
+
+  return (
+    <div>
+      <video ref={localRef} autoPlay muted playsInline width={300} />
+      <video ref={remoteRef} autoPlay playsInline width={300} />
+      <button onClick={call}>Call</button>
+    </div>
+  );
+}

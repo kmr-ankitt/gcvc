@@ -1,91 +1,83 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import io from "socket.io-client";
+
+const socket = io("https://gcvc.onrender.com"); // make sure server is live and CORS is correct
 
 export default function VideoSection() {
   const localRef = useRef<HTMLVideoElement>(null);
   const remoteRef = useRef<HTMLVideoElement>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
-  const socketRef = useRef<any>(null);
+  const [isCaller, setIsCaller] = useState(false);
 
   useEffect(() => {
-    socketRef.current = io("https://gcvc.onrender.com/");
-
     const pc = new RTCPeerConnection({
       iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
     });
     pcRef.current = pc;
 
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-        .then((stream) => {
-          if (localRef.current) {
-            localRef.current.srcObject = stream;
-            localRef.current.play().catch((err) => {
-              console.error("Error playing local video stream:", err);
-            });
-          }
-          stream.getTracks().forEach((track) => pc.addTrack(track, stream));
-        })
-        .catch((err) => {
-          alert("Error accessing media devices. Please check your camera and microphone permissions.");
-          console.error("Error accessing media devices.", err);
-        });
-    } else {
-      alert("MediaDevices API or getUserMedia is not supported on this device. Please use a compatible browser or device.");
-      console.error("MediaDevices API or getUserMedia not supported on this device.");
-    }
+    socket.on("offer", async (offer: RTCSessionDescriptionInit) => {
+      await pc.setRemoteDescription(new RTCSessionDescription(offer));
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+      if (localRef.current) {
+        localRef.current.srcObject = stream;
+        localRef.current.play();
+      }
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      socket.emit("answer", answer);
+    });
+
+    socket.on("answer", async (answer: RTCSessionDescriptionInit) => {
+      await pc.setRemoteDescription(new RTCSessionDescription(answer));
+    });
+
+    socket.on("ice-candidate", async (candidate: RTCIceCandidateInit) => {
+      await pc.addIceCandidate(new RTCIceCandidate(candidate));
+    });
 
     pc.ontrack = (e) => {
       if (remoteRef.current && e.streams[0]) {
         remoteRef.current.srcObject = e.streams[0];
-        remoteRef.current.play().catch((err) => {
-          console.error("Error playing remote video stream:", err);
-        });
+        remoteRef.current.play();
       }
     };
 
     pc.onicecandidate = (e) => {
       if (e.candidate) {
-        socketRef.current.emit("ice-candidate", e.candidate);
+        socket.emit("ice-candidate", e.candidate);
       }
     };
 
-    socketRef.current.on("offer", async (offer: RTCSessionDescriptionInit) => {
-      if (!pcRef.current) return;
-      await pcRef.current.setRemoteDescription(new RTCSessionDescription(offer));
-      const answer = await pcRef.current.createAnswer();
-      await pcRef.current.setLocalDescription(answer);
-      socketRef.current.emit("answer", answer);
-    });
-
-    socketRef.current.on("answer", (answer: RTCSessionDescriptionInit) => {
-      pcRef.current?.setRemoteDescription(new RTCSessionDescription(answer));
-    });
-
-    socketRef.current.on("ice-candidate", (candidate: RTCIceCandidateInit) => {
-      pcRef.current?.addIceCandidate(new RTCIceCandidate(candidate));
-    });
-
     return () => {
-      socketRef.current?.disconnect();
-      pcRef.current?.close();
+      pc.close();
+      socket.disconnect();
     };
   }, []);
 
   const call = async () => {
     if (!pcRef.current) return;
+    setIsCaller(true);
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    stream.getTracks().forEach((track) => pcRef.current!.addTrack(track, stream));
+    if (localRef.current) {
+      localRef.current.srcObject = stream;
+      localRef.current.play();
+    }
     const offer = await pcRef.current.createOffer();
     await pcRef.current.setLocalDescription(offer);
-    socketRef.current?.emit("offer", offer);
+    socket.emit("offer", offer);
   };
 
   return (
     <div>
-      <video ref={localRef} autoPlay muted playsInline width={300} />
+      <video ref={localRef} autoPlay playsInline muted width={300} />
       <video ref={remoteRef} autoPlay playsInline width={300} />
-      <button onClick={call}>Call</button>
+      <button onClick={call} disabled={isCaller}>
+        Call
+      </button>
     </div>
   );
 }

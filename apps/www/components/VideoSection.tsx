@@ -20,7 +20,12 @@ export default function VideoSection() {
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
       navigator.mediaDevices.getUserMedia({ video: true, audio: true })
         .then((stream) => {
-          if (localRef.current) localRef.current.srcObject = stream;
+          if (localRef.current) {
+            localRef.current.srcObject = stream;
+            localRef.current.play().catch((err) => {
+              console.error("Error playing local video stream:", err);
+            });
+          }
           stream.getTracks().forEach((track) => pc.addTrack(track, stream));
         })
         .catch((err) => {
@@ -35,6 +40,9 @@ export default function VideoSection() {
     pc.ontrack = (e) => {
       if (remoteRef.current && e.streams[0]) {
         remoteRef.current.srcObject = e.streams[0];
+        remoteRef.current.play().catch((err) => {
+          console.error("Error playing remote video stream:", err);
+        });
       }
     };
 

@@ -10,17 +10,27 @@ export default function VideoSection() {
   const socketRef = useRef<any>(null);
 
   useEffect(() => {
-    socketRef.current = io("http://localhost:4000");
+    socketRef.current = io("https://gcvc.onrender.com/");
 
     const pc = new RTCPeerConnection({
       iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
     });
     pcRef.current = pc;
 
-    navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then((stream) => {
-      if (localRef.current) localRef.current.srcObject = stream;
-      stream.getTracks().forEach((track) => pc.addTrack(track, stream));
-    });
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+        .then((stream) => {
+          if (localRef.current) localRef.current.srcObject = stream;
+          stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+        })
+        .catch((err) => {
+          alert("Error accessing media devices. Please check your camera and microphone permissions.");
+          console.error("Error accessing media devices.", err);
+        });
+    } else {
+      alert("MediaDevices API or getUserMedia is not supported on this device. Please use a compatible browser or device.");
+      console.error("MediaDevices API or getUserMedia not supported on this device.");
+    }
 
     pc.ontrack = (e) => {
       if (remoteRef.current && e.streams[0]) {

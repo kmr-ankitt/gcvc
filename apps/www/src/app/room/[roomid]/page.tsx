@@ -1,9 +1,11 @@
 import Room from "@/components/Room";
 
-export default function page({ params }: { params: { roomid: string } }) {
+export default async function page({ params }: { params: { roomid: string } }) {
+  const awaitedParams = await params;
+
   return (
     <div>
-      <Room roomId={params.roomid} />
+      <Room roomId={awaitedParams.roomid} />
     </div>
   );
 }

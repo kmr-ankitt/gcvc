@@ -5,7 +5,11 @@ import { createServer } from "http";
 
 export const app = express();
 const server = createServer(app);
-const io = new Server(server);
+const io = new Server({
+  cors: {
+    origin: "*"
+  }
+});
 
 io.on("connection", (socket) => {
   console.log("New user connected.")

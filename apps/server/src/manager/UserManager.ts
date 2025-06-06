@@ -38,6 +38,7 @@ export class UserManager {
     if (!user1 || !user2) return;
 
     this.roomManager.createRoom(user1, user2)
+    // this.clearQueue();
   }
 
   initHandler(socket: Socket) {

@@ -14,7 +14,7 @@ export class RoomManager {
   }
 
   createRoom(user1: User, user2: User) {
-    const roomId = this.generateRoomId();
+    const roomId = this.generateRoomId().toString();
     this.rooms.set(roomId.toString(), {
       user1,
       user2,
@@ -28,14 +28,16 @@ export class RoomManager {
   onOffer(roomId: string, sdp: string) {
     const user2 = this.rooms.get(roomId)?.user2;
     user2?.socket.emit("offer", {
-      sdp
+      sdp,
+      roomId
     })
   }
 
   onAnswer(roomId: string, sdp: string) {
     const user1 = this.rooms.get(roomId)?.user1;
     user1?.socket.emit("answer", {
-      sdp
+      sdp,
+      roomId
     })
   }
 

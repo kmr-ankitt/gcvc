@@ -8,7 +8,7 @@ export interface User {
 
 export class UserManager {
   private users: User[];
-  private queue: Socket[];
+  private queue: string[];
   private roomManager: RoomManager;
 
   constructor() {
@@ -19,26 +19,40 @@ export class UserManager {
 
   addUser(name: string, socket: Socket) {
     this.users.push({ socket, name })
-    this.queue.push(socket);
+    this.queue.push(socket.id);
+    socket.send("lobby")
     this.clearQueue();
     this.initHandler(socket);
   }
 
   removeUser(socket: Socket) {
-    this.users = this.users.filter(user => user.socket.id === socket.id)
-    this.queue = this.queue.filter(s => s.id === socket.id);
+    const user = this.users.find(user => user.socket.id === socket.id);
+    this.users = this.users.filter(user => user.socket.id !== socket.id)
+    this.queue = this.queue.filter(s => s === socket.id);
   }
 
   clearQueue() {
     if (this.queue.length < 2) return;
 
-    const user1 = this.users.find(user => user.socket.id === this.queue.shift()?.id);
-    const user2 = this.users.find(user => user.socket.id === this.queue.pop()?.id);
+    console.log("-----------------------------------")
+    console.log(this.queue)
+    console.log("-----------------------------------")
+
+    const id1 = this.queue.shift();
+    const id2 = this.queue.pop();
+    console.log("id is " + id1 + " " + id2);
+    const user1 = this.users.find(x => x.socket.id === id1);
+    const user2 = this.users.find(x => x.socket.id === id2);
+
+    console.log("-----------------------------------")
+    console.log(user1?.name)
+    console.log(user2?.name)
+    console.log("-----------------------------------")
 
     if (!user1 || !user2) return;
 
     this.roomManager.createRoom(user1, user2)
-    // this.clearQueue();
+    this.clearQueue();
   }
 
   initHandler(socket: Socket) {

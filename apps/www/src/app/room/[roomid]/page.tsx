@@ -1,11 +1,12 @@
+"use client"
 import Room from "@/components/Room";
+import React from "react";
 
-export default async function page({ params }: { params: { roomid: string } }) {
-  const awaitedParams = await params;
+export default function Page({ params }: { params: Promise<{ roomid: string }> }) {
 
   return (
     <div>
-      <Room roomId={awaitedParams.roomid} />
+      <Room roomid={roomid} localAudioTrack={localAudioTrack} localVideoTrack={localVideoTrack} />
     </div>
   );
 }

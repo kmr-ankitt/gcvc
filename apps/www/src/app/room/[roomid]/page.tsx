@@ -1,8 +1,13 @@
 "use client"
+
 import Room from "@/components/Room";
+import { useMedia } from "@/context/MediaContext";
+
 import React from "react";
 
 export default function Page({ params }: { params: Promise<{ roomid: string }> }) {
+  const { localAudioTrack, localVideoTrack } = useMedia();
+  const { roomid } = React.use(params);
 
   return (
     <div>

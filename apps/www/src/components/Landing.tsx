@@ -5,8 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useMedia } from "@/context/MediaContext";
 
 export default function Landing() {
-  const [roomId, setRoomId] = useState("");
-  const [joined, setJoined] = useState(false);
+  const [name, setName] = useState("");
   const videoRef = useRef<HTMLVideoElement>(null);
   const { setLocalAudioTrack, setLocalVideoTrack } = useMedia();
 
@@ -14,8 +13,8 @@ export default function Landing() {
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!roomId.trim()) return;
-    setJoined(true);
+    if (!name.trim()) return;
+    const roomId = Math.random().toString(36).substring(2, 10);
     router.push(`/room/${roomId}`);
   };
 
@@ -52,10 +51,10 @@ export default function Landing() {
       <form className="flex flex-col gap-4 w-full max-w-xs" onSubmit={handleSubmit}>
         <input
           type="text"
-          placeholder="Enter Room ID"
+          placeholder="Enter Name"
           className="bg-zinc-200 text-zinc-800 placeholder:text-zinc-500 p-2 rounded text-center"
-          value={roomId}
-          onChange={(e) => setRoomId(e.target.value)}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
           required
         />
         <button

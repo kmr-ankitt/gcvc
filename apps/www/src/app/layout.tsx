@@ -16,6 +16,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "GCVC - Video Chat",
   description: "GCVC - Video Chat",
+  icons: {
+    icon: "/favicon.ico",
+  }
 };
 
 export default function RootLayout({

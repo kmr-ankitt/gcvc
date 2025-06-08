@@ -25,9 +25,9 @@ export default function Room({
   const localVideoRef = useRef<HTMLVideoElement>(null);
 
   const name = roomid;
-  
+
   useEffect(() => {
-    
+
     console.log("Room name is : " + name)
     const socket = io(URL);
 
@@ -71,7 +71,7 @@ export default function Room({
         });
       }
     });
-    
+
     socket.on("offer", async ({ roomId, sdp: remoteSdp }) => {
       setLobby(false);
       const pc = new RTCPeerConnection();
@@ -157,10 +157,38 @@ export default function Room({
 
   }, [localVideoRef])
 
-  return (<div>
-    Hi {name}
-    <video autoPlay width={400} height={400} ref={localVideoRef} />
-    {lobby ? "Waiting to connect you to someone" : null}
-    <video autoPlay width={400} height={400} ref={remoteVideoRef} />
-  </div>)
+  return (
+    <div className="flex flex-col items-center gap-6 p-8">
+      <h2 className="mb-2 text-xl font-semibold">
+        Room: <span className="text-blue-600">{name}</span>
+      </h2>
+      <div className="flex gap-8">
+        <div className="flex flex-col items-center">
+          <span className="mb-2 font-medium">Your Video</span>
+          <video
+            autoPlay
+            width={400}
+            height={300}
+            ref={localVideoRef}
+            className="rounded-xl border-2 border-blue-600 bg-zinc-900"
+          />
+        </div>
+        <div className="flex flex-col items-center">
+          <span className="mb-2 font-medium">Remote Video</span>
+          <video
+            autoPlay
+            width={400}
+            height={300}
+            ref={remoteVideoRef}
+            className="rounded-xl border-2 border-gray-500 bg-zinc-900"
+          />
+        </div>
+      </div>
+      {lobby && (
+        <div className="mt-6 px-6 py-3 bg-gray-100 rounded-lg text-gray-800 font-medium shadow-md">
+          Waiting to connect you to someone...
+        </div>
+      )}
+    </div>
+  );
 }

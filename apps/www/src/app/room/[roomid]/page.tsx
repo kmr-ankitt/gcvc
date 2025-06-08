@@ -10,7 +10,7 @@ export default function Page({ params }: { params: Promise<{ roomid: string }> }
   const { roomid } = React.use(params);
 
   return (
-    <div>
+    <div className="flex flex-col items-center justify-center h-screen">
       <Room roomid={roomid} localAudioTrack={localAudioTrack} localVideoTrack={localVideoTrack} />
     </div>
   );

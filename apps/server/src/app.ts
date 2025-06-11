@@ -3,7 +3,9 @@ import { PORT } from "./config";
 import { Server } from "socket.io";
 import { createServer } from "http";
 import { UserManager } from "./manager/UserManager";
+import dotenv from "dotenv";
 
+dotenv.config();
 export const app = express();
 const server = createServer(app);
 const io = new Server(server, {
